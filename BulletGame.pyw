@@ -6,7 +6,7 @@ win = pygame.display.set_mode((s_width, s_height), pygame.RESIZABLE)
 pygame.display.set_caption("Bullet Game - By Nick")
 
 class Bullet(object):
-    def __init__(self, surface, color, position, size, velocity, radius, mode, damage=10):
+    def __init__(self, surface, color, position, size, velocity, radius, mode, damage=3):
         self.surface = surface
         self.color = color
         self.width = size[0]
@@ -139,7 +139,7 @@ def main():
         if timecount/1000 >= 0.1:
             timecount = 0
             launch_projectile(projectiles, "Random Beam")
-            for i in range(20): launch_projectile(projectiles, "Bullet")
+            for i in range(2): launch_projectile(projectiles, "Bullet")
             launch_projectile(projectiles, "Fixed Beam")
                 
         for event in pygame.event.get():
