@@ -5,8 +5,11 @@ s_width, s_height = 800, 600
 win = pygame.display.set_mode((s_width, s_height), pygame.RESIZABLE)
 pygame.display.set_caption("Bullet Game - By Nick")
 
+field = [100, 100, 600, 400]
+
 class Bullet(object):
     def __init__(self, surface, color, position, size, velocity, radius, mode, damage=3):
+        self.bofs = [0, 20, 20, 20]
         self.surface = surface
         self.color = color
         self.width = size[0]
@@ -25,14 +28,15 @@ class Bullet(object):
         else: return False
     
     def check_bounds(self, s_width, s_height):
-        if self.xpos > s_width+100 or self.xpos < -100 or self.ypos > s_height+100 or self.ypos < -100: return True
+        if self.xpos+field[0] < field[0]-self.bofs[0] or self.xpos+field[0] > field[2]+field[0]-self.bofs[1] or \
+        self.ypos+field[1] < field[1]-self.bofs[2] or self.ypos+field[1] > field[3]+field[1]-self.bofs[3]: return True
         else: return False
 
     def get_damage(self):
         return self.damage
 
     def draw(self):
-        self.projectile = pygame.draw.rect(self.surface, self.color, (self.xpos, self.ypos, self.width, self.height), width=self.mode, border_radius=self.radius,
+        self.projectile = pygame.draw.rect(self.surface, self.color, (self.xpos+field[0], self.ypos+field[1], self.width, self.height), width=self.mode, border_radius=self.radius,
         border_top_left_radius=-self.radius, border_top_right_radius=-self.radius, border_bottom_left_radius=-self.radius, border_bottom_right_radius=-self.radius)
 
     def update(self):
@@ -54,11 +58,23 @@ class Player(object):
         self.health = stats[1]
         self.maxhealth = stats[1]
 
+    def check_collision(self):
+        if self.xpos+field[0] < field[0] or self.xpos+field[0] > field[2]+field[0]-30 or self.ypos+field[1] < field[1] or self.ypos+field[1] > field[3]+field[1]-30: return True
+        else: return False
+
     def get_input(self):
-        if keyboard.is_pressed("w"): self.ypos -= self.walkspeed
-        if keyboard.is_pressed("a"): self.xpos -= self.walkspeed
-        if keyboard.is_pressed("s"): self.ypos += self.walkspeed
-        if keyboard.is_pressed("d"): self.xpos += self.walkspeed
+        if keyboard.is_pressed("w"):
+            self.ypos -= self.walkspeed
+            if self.check_collision(): self.ypos += self.walkspeed
+        if keyboard.is_pressed("a"):
+            self.xpos -= self.walkspeed
+            if self.check_collision(): self.xpos += self.walkspeed
+        if keyboard.is_pressed("s"):
+            self.ypos += self.walkspeed
+            if self.check_collision(): self.ypos -= self.walkspeed
+        if keyboard.is_pressed("d"):
+            self.xpos += self.walkspeed
+            if self.check_collision(): self.xpos -= self.walkspeed
 
     def get_character(self):
         return self.character
@@ -73,7 +89,7 @@ class Player(object):
         self.health -= dmg
 
     def draw(self):
-        self.character = pygame.draw.rect(self.surface, self.color, (self.xpos, self.ypos, self.width, self.height), width=self.mode, border_radius=self.radius,
+        self.character = pygame.draw.rect(self.surface, self.color, (self.xpos+field[0], self.ypos+field[1], self.width, self.height), width=self.mode, border_radius=self.radius,
         border_top_left_radius=-self.radius, border_top_right_radius=-self.radius, border_bottom_left_radius=-self.radius, border_bottom_right_radius=-self.radius)
     
     def update(self):
@@ -82,6 +98,9 @@ class Player(object):
 
 def redraw_window(surface):
     surface.fill((30, 30, 30, 255))
+
+    pygame.draw.rect(surface, (255, 255, 255), (field[0]-10, field[1]-10, field[2]+10, field[3]+10), width=10, border_radius=5, border_top_left_radius=-5, border_top_right_radius=-5,
+                     border_bottom_left_radius=-5, border_bottom_right_radius=-5)
 
 def draw_healthbar(surface, player, width, height):
     pygame.draw.rect(surface, (100, 100, 100), (10, 10, player.get_maxhealth()*width, height), width=0, border_radius=5, border_top_left_radius=-5, border_top_right_radius=-5,
@@ -104,24 +123,31 @@ def check_gameover(surface, health):
 
 def launch_projectile(projectiles, pattern):
     if pattern == "Random Beam":
+        height = random.randint(20, 200)
         if random.randint(1, 2) == 1:
-            projectiles.append(Bullet(win, (255, 255, 255), (-10, random.randint(0, s_height)), (10, random.randint(20, 200)), (random.randint(2, 10), 0), 5, 0))
+            projectiles.append(Bullet(win, (255, 255, 255), (0, random.randint(0, field[3]-height)), (10, height), (random.randint(2, 10), 0), 5, 0))
         else:
-            projectiles.append(Bullet(win, (255, 255, 255), (s_width+10, random.randint(0, s_height)), (10, random.randint(20, 200)), (random.randint(-10, -2), 0), 5, 0))
+            projectiles.append(Bullet(win, (255, 255, 255), (field[2]-20, random.randint(0, field[3]-height)), (10, height), (random.randint(-10, -2), 0), 5, 0))
     if pattern == "Bullet":
         if random.randint(1, 2) == 1:
-            projectiles.append(Bullet(win, (255, 0, 0), (-10, random.randint(0, s_height)), (10, 10), (random.randint(6, 20), 0), 5, 0))
+            projectiles.append(Bullet(win, (255, 0, 0), (0, random.randint(10, field[3]-10)), (10, 10), (random.randint(6, 20), 0), 5, 0))
         else:
-            projectiles.append(Bullet(win, (255, 0, 0), (s_width+10, random.randint(0, s_height)), (10, 10), (random.randint(-20, -6), 0), 5, 0))
+            projectiles.append(Bullet(win, (255, 0, 0), (field[2]-20, random.randint(0, field[3])), (10, 10), (random.randint(-20, -6), 0), 5, 0))
     if pattern == "Fixed Beam":
         if random.randint(1, 2) == 1:
-            projectiles.append(Bullet(win, (255, 255, 255), (-10, -10), (10, random.randint(20, s_height//2)), (random.randint(2, 10), 0), 5, 0))
+            projectiles.append(Bullet(win, (255, 255, 255), (0, -10), (10, random.randint(20, field[3]//2)), (random.randint(2, 10), 0), 5, 0))
         else:
-            height = random.randint(20, s_height//2)
-            projectiles.append(Bullet(win, (255, 255, 255), (s_width+10, s_height-height+10), (10, height), (random.randint(-10, -2), 0), 5, 0))
-    
+            height = random.randint(20, field[3]/2)
+            projectiles.append(Bullet(win, (255, 255, 255), (field[2]-20, field[3]-height), (10, height), (random.randint(-10, -2), 0), 5, 0))
+    if pattern == "Double":
+        height = field[3]/2
+        projectiles.append(Bullet(win, (255, 255, 255), (0, -10), (10, height), (5, 0), 5, 0))
+        projectiles.append(Bullet(win, (255, 255, 255), (field[2]-20, field[3]-height), (10, height), (-5, 0), 5, 0))
+
 def resize():
-    global s_width, s_height
+    global s_width, s_height, field
+    field[0] = s_width/2-field[2]/2
+    field[1] = s_height/2-field[3]/2
     s_width, s_height = pygame.display.get_surface().get_size()
 
 def main():
@@ -130,7 +156,7 @@ def main():
     clock = pygame.time.Clock()
     timecount = 0
     projectiles = []
-    player = Player(win, (50, 50, 255), (400, 100), (20, 20), 5, 0, (5, 20))
+    player = Player(win, (50, 50, 255), (100, 100), (20, 20), 5, 0, (5, 20))
 
     while run:
         clock.tick(60)
@@ -138,9 +164,9 @@ def main():
 
         if timecount/1000 >= 0.1:
             timecount = 0
-            launch_projectile(projectiles, "Random Beam")
-            for i in range(2): launch_projectile(projectiles, "Bullet")
             launch_projectile(projectiles, "Fixed Beam")
+            launch_projectile(projectiles, "Bullet")
+            launch_projectile(projectiles, "Random Beam")
                 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
